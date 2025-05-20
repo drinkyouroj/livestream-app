@@ -1,114 +1,152 @@
-// Use configuration from window.DATAGRAM_CONFIG
-const config = window.DATAGRAM_CONFIG;
+// Global client reference
+let client;
 
-// Initialize the Datagram client
-const client = new Datagram.Client(config);
-
-// Elements
-let localStream;
-let remoteStream;
-let peerConnection;
-
-// Check if we're on the broadcaster or viewer page
-const isBroadcaster = document.getElementById('localVideo') !== null;
-
-if (isBroadcaster) {
-    // Broadcaster setup
-    const localVideo = document.getElementById('localVideo');
-    const startButton = document.getElementById('startButton');
-    const stopButton = document.getElementById('stopButton');
+// Helper function to update status
+function updateStatus(message) {
     const statusElement = document.getElementById('status');
+    if (statusElement) {
+        statusElement.textContent = message;
+    }
+}
+
+// Main application initialization
+function initializeApp() {
+    if (!client) {
+        console.error('Client not initialized');
+        updateStatus('Error: Client not initialized');
+        return;
+    }
     
-    let streamId = `stream-${Math.random().toString(36).substr(2, 9)}`;
+    // Application state
+    let localStream;
+    let currentStream;
     
-    startButton.addEventListener('click', async () => {
-        try {
-            // Get user media
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            
-            localVideo.srcObject = localStream;
-            
-            // Create a new stream
-            const stream = await client.streams.create({
-                id: streamId,
-                name: 'My Livestream',
-                video: true,
-                audio: true
-            });
-            
-            // Publish the stream
-            await stream.publish(localStream);
-            
-            statusElement.textContent = `Streaming with ID: ${streamId}`;
-            startButton.disabled = true;
-            stopButton.disabled = false;
-            
-            // Handle stream end
-            stopButton.addEventListener('click', async () => {
-                await stream.unpublish();
-                localStream.getTracks().forEach(track => track.stop());
-                localVideo.srcObject = null;
-                statusElement.textContent = 'Stream ended';
+    // Check if we're on the broadcaster or viewer page
+    const isBroadcaster = document.getElementById('localVideo') !== null;
+    
+    if (isBroadcaster) {
+        // Broadcaster-specific code
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const localVideo = document.getElementById('localVideo');
+        
+        startButton.addEventListener('click', async () => {
+            try {
+                updateStatus('Starting stream...');
+                
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                // Display local video
+                if (localVideo) {
+                    localVideo.srcObject = localStream;
+                }
+                
+                // Create a new stream
+                const streamId = 'test-stream-' + Math.random().toString(36).substring(2, 10);
+                currentStream = await client.streams.create({
+                    id: streamId,
+                    name: 'My Livestream',
+                    video: true,
+                    audio: true
+                });
+                
+                // Publish the stream
+                await currentStream.publish(localStream);
+                
+                updateStatus(`Streaming as ${streamId}`);
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                
+            } catch (error) {
+                console.error('Error starting stream:', error);
+                updateStatus(`Error: ${error.message}`);
+            }
+        });
+        
+        stopButton.addEventListener('click', async () => {
+            try {
+                if (currentStream) {
+                    await currentStream.stop();
+                    currentStream = null;
+                }
+                
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+                
+                updateStatus('Stream stopped');
                 startButton.disabled = false;
                 stopButton.disabled = true;
-            });
-            
-        } catch (error) {
-            console.error('Error starting stream:', error);
-            statusElement.textContent = `Error: ${error.message}`;
-        }
-    });
-    
-} else {
-    // Viewer setup
-    const remoteVideo = document.getElementById('remoteVideo');
-    const watchButton = document.getElementById('watchButton');
-    const leaveButton = document.getElementById('leaveButton');
-    const streamIdInput = document.getElementById('streamId');
-    const statusElement = document.getElementById('status');
-    
-    let currentStream = null;
-    
-    watchButton.addEventListener('click', async () => {
-        const streamId = streamIdInput.value.trim();
-        if (!streamId) {
-            statusElement.textContent = 'Please enter a stream ID';
-            return;
-        }
+                
+            } catch (error) {
+                console.error('Error stopping stream:', error);
+                updateStatus(`Error: ${error.message}`);
+            }
+        });
+    } else {
+        // Viewer-specific code
+        const watchButton = document.getElementById('watchButton');
+        const streamIdInput = document.getElementById('streamId');
+        const remoteVideo = document.getElementById('remoteVideo');
         
-        try {
-            // Get the stream by ID
-            currentStream = await client.streams.get(streamId);
-            
-            // Subscribe to the stream
-            const stream = await currentStream.subscribe();
-            
-            // Play the remote stream
-            remoteVideo.srcObject = stream;
-            
-            statusElement.textContent = `Watching stream: ${streamId}`;
-            watchButton.disabled = true;
-            leaveButton.disabled = false;
-            streamIdInput.disabled = true;
-            
-        } catch (error) {
-            console.error('Error watching stream:', error);
-            statusElement.textContent = `Error: ${error.message}`;
-        }
-    });
-    
-    leaveButton.addEventListener('click', () => {
-        if (currentStream) {
-            currentStream.unsubscribe();
-            remoteVideo.srcObject = null;
-            statusElement.textContent = 'Left the stream';
-            watchButton.disabled = false;
-            leaveButton.disabled = true;
-            streamIdInput.disabled = false;
-            currentStream = null;
-        }
-    });
+        watchButton.addEventListener('click', async () => {
+            try {
+                const streamId = streamIdInput.value.trim();
+                if (!streamId) {
+                    updateStatus('Please enter a stream ID');
+                    return;
+                }
+                
+                updateStatus(`Connecting to stream ${streamId}...`);
+                
+                // Get the stream
+                const stream = await client.streams.get(streamId);
+                
+                // Play the stream
+                if (remoteVideo) {
+                    remoteVideo.srcObject = await stream.play();
+                }
+                
+                updateStatus(`Watching stream: ${streamId}`);
+                
+            } catch (error) {
+                console.error('Error watching stream:', error);
+                updateStatus(`Error: ${error.message}`);
+            }
+        });
+    }
 }
+
+// Wait for the DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM fully loaded, initializing application...');
+
+    // Use configuration from window.DATAGRAM_CONFIG or fallback
+    const config = window.DATAGRAM_CONFIG || {
+        apiKey: 'org_d0htj1ukn5gs7i9cadk0:T/mGK6isA7ZxCEgvaydOpf8YEBsBStRCqW6VNCQAdFI',
+        environment: 'development'
+    };
+
+    // Check if Datagram is available
+    if (typeof Datagram === 'undefined') {
+        const errorMsg = 'Error: Datagram SDK not loaded. Please check your internet connection and refresh the page.';
+        console.error(errorMsg);
+        updateStatus(errorMsg);
+        return;
+    }
+
+    // Initialize the Datagram client
+    try {
+        client = new Datagram.Client(config);
+        console.log('Datagram client initialized successfully');
+        initializeApp();
+    } catch (error) {
+        console.error('Error initializing Datagram client:', error);
+        updateStatus(`Error initializing client: ${error.message}`);
+    }
+});
