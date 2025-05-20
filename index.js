@@ -1,8 +1,8 @@
+// Use configuration from window.DATAGRAM_CONFIG
+const config = window.DATAGRAM_CONFIG;
+
 // Initialize the Datagram client
-const client = new Datagram.Client({
-    apiKey: 'YOUR_ACTUAL_API_KEY', // Your Datagram API key goes here
-    environment: 'development' // or 'production' for live environment
-});
+const client = new Datagram.Client(config);
 
 // Elements
 let localStream;

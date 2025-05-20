@@ -5,7 +5,11 @@ A simple web application for broadcasting and watching livestreams using the Dat
 ## Setup
 
 1. Sign up at [Datagram](https://sdk.datagram.network/) to get your API key
-2. Replace `YOUR_API_KEY` in `index.js` with your actual Datagram API key
+2. Create a `config.js` file based on `config.example.js` and add your API key:
+   ```bash
+   cp config.example.js config.js
+   ```
+   Then edit `config.js` and replace `YOUR_DATAGRAM_API_KEY` with your actual API key.
 
 ## Running the Application
 
@@ -17,8 +21,13 @@ python3 -m http.server 8000
 ```
 
 2. Open your browser and navigate to:
-   - `http://localhost:8000/broadcaster.html` - For the broadcaster (streamer)
-   - `http://localhost:8000/viewer.html` - For viewers
+   - `http://localhost:8000/` - Home page with options to broadcast or watch
+   - `http://localhost:8000/broadcaster.html` - Direct link to broadcaster
+   - `http://localhost:8000/viewer.html` - Direct link to viewer
+
+## Security Note
+
+The `config.js` file is included in `.gitignore` to prevent committing your API key to version control. Make sure to never commit this file with your actual API key.
 
 ## How to Use
 
