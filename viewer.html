@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datagram Livestream - Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Livestream Viewer</h1>
+        <div class="video-container">
+            <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+        <div class="controls">
+            <input type="text" id="streamId" placeholder="Enter Stream ID">
+            <button id="watchButton">Watch Stream</button>
+            <button id="leaveButton" disabled>Leave Stream</button>
+        </div>
+        <div class="status" id="status">Not connected</div>
+    </div>
+    <script type="module" src="index.js"></script>
+</body>
+</html>
