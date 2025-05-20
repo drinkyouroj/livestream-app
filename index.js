@@ -123,30 +123,40 @@ function initializeApp() {
 }
 
 // Wait for the DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM fully loaded, initializing application...');
-
+    
+    // Check if Datagram is available
+    if (typeof Datagram === 'undefined') {
+        const errorMsg = 'Error: Datagram SDK not loaded. Please check the console for details.';
+        console.error(errorMsg);
+        console.log('Global objects:');
+        console.log('- window.Datagram:', window.Datagram);
+        console.log('- window.DatagramSDK:', window.DatagramSDK);
+        console.log('- window.datagram:', window.datagram);
+        updateStatus(errorMsg);
+        return;
+    }
+    
     // Use configuration from window.DATAGRAM_CONFIG or fallback
     const config = window.DATAGRAM_CONFIG || {
         apiKey: 'org_d0htj1ukn5gs7i9cadk0:T/mGK6isA7ZxCEgvaydOpf8YEBsBStRCqW6VNCQAdFI',
         environment: 'development'
     };
 
-    // Check if Datagram is available
-    if (typeof Datagram === 'undefined') {
-        const errorMsg = 'Error: Datagram SDK not loaded. Please check your internet connection and refresh the page.';
-        console.error(errorMsg);
-        updateStatus(errorMsg);
-        return;
-    }
-
     // Initialize the Datagram client
     try {
+        console.log('Initializing Datagram client with config:', config);
         client = new Datagram.Client(config);
         console.log('Datagram client initialized successfully');
         initializeApp();
     } catch (error) {
         console.error('Error initializing Datagram client:', error);
         updateStatus(`Error initializing client: ${error.message}`);
+        console.log('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
     }
 });

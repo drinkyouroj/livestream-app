@@ -21,8 +21,52 @@
     </div>
     <!-- Load configuration first -->
     <script src="config.js"></script>
-    <!-- Load Datagram SDK -->
-    <script src="https://unpkg.com/@datagram/sdk@1.0.0/dist/datagram.umd.js"></script>
+    
+    <script>
+        console.log('=== Starting SDK Loading Process ===');
+        console.log('1. Starting to load SDK...');
+        
+        // Create a script element
+        const script = document.createElement('script');
+        // Try loading from a direct GitHub raw link as a fallback
+        script.src = 'https://raw.githubusercontent.com/datagramhq/datagram-js/main/dist/datagram.umd.js';
+        
+        // Add load handler
+        script.onload = function() {
+            console.log('2. SDK script loaded successfully');
+            console.log('3. Checking for SDK in global scope...');
+            
+            // Check all possible global variables
+            console.log('4. window.Datagram:', window.Datagram);
+            console.log('5. window.datagram:', window.datagram);
+            console.log('6. window.DatagramSDK:', window.DatagramSDK);
+            
+            // Check for the SDK in common global variables
+            const sdk = window.Datagram || window.DatagramSDK || window.datagram;
+            
+            if (sdk) {
+                console.log('7. SDK found in global scope');
+                window.Datagram = sdk; // Ensure it's always available as Datagram
+            } else {
+                console.error('8. ERROR: SDK not found in any global variable');
+                console.log('9. All global properties:', Object.keys(window).filter(k => 
+                    k.toLowerCase().includes('datagram') || 
+                    k.toLowerCase().includes('sdk')
+                ));
+            }
+        };
+        
+        // Add error handler
+        script.onerror = function(error) {
+            console.error('ERROR: Failed to load SDK script:', error);
+            console.log('Script src that failed:', script.src);
+        };
+        
+        // Add to document
+        console.log('10. Adding script tag to document head');
+        document.head.appendChild(script);
+    </script>
+    
     <!-- Load our application code -->
     <script src="index.js"></script>
 </body>
